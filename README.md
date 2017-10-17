@@ -12,12 +12,11 @@ to add custom adapters to alter your JSON payload before it is sent to the
 You can really use that logger as you would with any other logger built atop the
 official `logging` module from Python's standard library.
 
-In particular, it is fully compatible with the [json formatter](https://github.com/madzak/python-json-logger)
-for the official `logging` module, and probably compatible with other JSON
-formatters as well. You can therefore use this middleware to send exhaustive
-access logs as JSON to the log aggregation of your choice, would it be [Fluentd](https://www.fluentd.org/) (over
-http or by simply sending your logs to `stdout` and have fluentd parse them from
-here), [Logstash](https://www.elastic.co/fr/products/logstash), [logmatic/datadog](https://logmatic.io/), Splunk, Sumologic, etc.
+You can use this middleware to send exhaustive access logs as JSON to the log
+aggregation of your choice, would it be [Fluentd](https://www.fluentd.org/)
+(over http or by simply sending your logs to `stdout` and have fluentd parse
+them from here), [Logstash](https://www.elastic.co/fr/products/logstash),
+[logmatic/datadog](https://logmatic.io/), Splunk, Sumologic, etc.
 
 Have fun collecting and analysing your logs !
 
@@ -67,11 +66,7 @@ help. Note that Django relies on the standard logging library, you might
 therefore want to [check out this page](https://docs.python.org/3/library/logging.html)
 as well.
 
-Here's an example configuration using the `dictConfig` method, and the
-[python-json-logger](https://github.com/madzak/python-json-logger) formatter
-that spits access logs (and access logs only) to stdout, as JSON. You'll need to
-`pip install python-json-logger` or add it to your `requirments.txt`.
-
+Here's an example configuration using the `dictConfig` method
 ```python
 # in your django project settings file
 MIDDLEWARE_CLASSES.insert(0, 'django_access_logs.AccessLoggingMiddleware')
@@ -80,15 +75,14 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
     'formatters': {
-        'json': {
+        'bare': {
             'format': '%(message)s',
-            'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
         },
     },
     'handlers': {
         'stdout': {
             'class': 'logging.StreamHandler',
-            'formatter': 'json'
+            'formatter': 'bare'
         },
     },
     'loggers': {
@@ -155,8 +149,8 @@ bodies you are logging (strongly recommended). By default, `MAX_BODY_SIZE =
 5*1024 # 5 KiB`.
 
 ```python
-ACCESS_LOGS_CONFIG["BODY_LOG_LEVEL"] = logging.DEBUG // Log all bodies
-ACCESS_LOGS_CONFIG["MAX_BODY_SIZE"] = 10x1024 // 10KiB
+ACCESS_LOGS_CONFIG["BODY_LOG_LEVEL"] = logging.DEBUG # Log all bodies
+ACCESS_LOGS_CONFIG["MAX_BODY_SIZE"] = 10*1024 # 10KiB
 ```
 
 ##### Note
