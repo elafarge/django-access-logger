@@ -1,4 +1,23 @@
+# encoding: utf-8
 """
+                               LICENSE
+
+   Copyright 2017 Étienne Lafarge
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+                              -----------
+
 A Django middleware that logs requests to the django.advanced_access_logs
 logger, with configurable request/response body logging policies and the ability
 to add custom adapters to alter your JSON payload before it is sent to the
@@ -15,6 +34,7 @@ from __future__ import unicode_literals
 # stl
 import re
 import json
+import time
 import logging
 
 # 3p
@@ -59,9 +79,14 @@ class AccessLogsMiddleware(MiddlewareMixin):
         """ Instantiates our Middleware """
         MiddlewareMixin.__init__(self, get_response)
 
+        # Update the default config with user defined config
         self.conf = DEFAULT_CONFIG
         self.conf.update(settings.ACCESS_LOGS_CONFIG)
+
+        # Instantiate our log building facility
         self.log_builder = AccessLogBuilder(self.conf)
+
+        # And register our logger
         self.logger = logging.getLogger("django.advanced_access_logs")
 
         # Let's precompile our health check regexes
@@ -76,13 +101,14 @@ class AccessLogsMiddleware(MiddlewareMixin):
         we can retrieve them before forwarding the response to our client.
         """
         # Let's keep track of the original request data
-        request.META["timestamp_started"] = time.time()
-        request.META["original_request"] = Request(request.META)
-        request.META["encountered_exceptions"] = []
+        request.META["aalm_timestamp_started"] = time.time()
+        request.META["aalm_original_request"] = request
+        request.META["aalm_exceptions"] = []
 
         # If necessary let's log the body as well
-        if request.method.lower() not in NO_REQUEST_BODY_METHODS:
-            request.META['original_request_body'] = \
+        if request.method.lower() not in NO_REQUEST_BODY_METHODS and \
+                self.conf["BODY_LOG_LEVEL"] is not None:
+            request.META['aalm_request_body'] = \
                 request.body[:self.conf["MAX_BODY_SIZE"]]
 
     def process_exception(self, request, exception):
@@ -90,42 +116,58 @@ class AccessLogsMiddleware(MiddlewareMixin):
         Stores encountered exceptions in the request metadata
         """
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        request.META['encountered_exceptions'].append(traceback.format_exception(
+        request.META['aalm_exceptions'].append(traceback.format_exception(
             exc_type, exc_value, exc_traceback
         ))
 
-    def process_reponse(self, request, response):
+    def process_response(self, request, response):
         """
         Called before the response is sent to the client, it computes the
         request duration, retrieves the original request metadata and sends all
         that to our logging module
         """
-        duration = time.time() - request.META["timestamp_started"]
+        duration = time.time() - request.META["aalm_timestamp_started"]
 
         # Determine wether or not bodies should be logged
         lvl = logging.INFO
-        if self.should_be_logged_as_debug(access_log):
-            lvl = logging.DEBUG
-        elif response.status_code//100 == 5:
+        if response.status_code//100 == 5:
             lvl = logging.ERROR
         elif response.status_code//100 == 4:
             lvl = logging.WARN
 
         access_log = self.log_builder.build_log_dict(
-            request.META["original_request"],
-            request.META["encountered_exceptions"],
+            request.META["aalm_original_request"],
+            request.META["aalm_exceptions"],
             response,
             duration,
             lvl >= self.conf["BODY_LOG_LEVEL"],
         )
 
+        # Run user-defined log adapters
+        for adapter in self.conf["ADAPTERS"]:
+            adapter(request, access_log)
+
+        # Flatten the log dict
+        if self.conf["FLATTEN"]:
+            access_log = self.log_builder.flatten_dict(access_log)
+
+        # Determine if the request should be logged under the DEBUG level
+        if self.should_be_logged_as_debug(access_log):
+            lvl = logging.DEBUG
+
         self.logger.log(lvl, access_log)
+
+        return response
 
     def should_be_logged_as_debug(self, log):
         """ Returns true if the request is in the list of requests we want to
         skip """
         for entry in self.conf["DEBUG_REQUESTS"]:
+            matches = True
             for (k, reg) in entry.items():
-                if k in log and reg.match(log[k]):
-                    return True
+                if not k in log or not reg.match(log[k]):
+                    matches = False
+                    break
+            if matches:
+                return True
         return False

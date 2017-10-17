@@ -2,18 +2,16 @@ from setuptools import setup
 
 setup(
     name='django-access-logger',
-    version='0.1.0',
+    version='0.2.0',
     description='Access logging for Django, the right way',
     author="Étienne Lafarge",
     author_email="etienne.lafarge@gmail.com",
-    url="https://github.com/elafarge/django-access-logs",
+    url="https://github.com/elafarge/django-access-logger",
     # TODO: download URL
     license='Apache2',
-    packages=['.'],
+    packages=['django_access_logger'],
     zip_safe=False,
-    install_requires=[
-        'requests==2.9.1',
-    ],
+    install_requires=[],
     include_package_data=True,
     classifiers=[
         'Environment :: Web Environment',
