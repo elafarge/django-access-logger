@@ -33,9 +33,11 @@ from __future__ import unicode_literals
 
 # stl
 import re
+import sys
 import json
 import time
 import logging
+import traceback
 
 # 3p
 from django.conf import settings
@@ -81,7 +83,8 @@ class AccessLogsMiddleware(MiddlewareMixin):
 
         # Update the default config with user defined config
         self.conf = DEFAULT_CONFIG
-        self.conf.update(settings.ACCESS_LOGS_CONFIG)
+        if hasattr(settings, "ACCESS_LOGS_CONFIG"):
+            self.conf.update(settings.ACCESS_LOGS_CONFIG)
 
         # Instantiate our log building facility
         self.log_builder = AccessLogBuilder(self.conf)
@@ -155,7 +158,7 @@ class AccessLogsMiddleware(MiddlewareMixin):
         if self.should_be_logged_as_debug(access_log):
             lvl = logging.DEBUG
 
-        self.logger.log(lvl, access_log)
+        self.logger.log(lvl, json.dumps(access_log))
 
         return response
 

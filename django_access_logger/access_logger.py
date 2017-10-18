@@ -49,21 +49,21 @@ class AccessLogBuilder():
 
             request_headers[key] = val
 
-        response_headers = {name.lower(): values[1:]
+        response_headers = {name.lower(): ",".join(values[1:])
                             for (name, values)
                             in response._headers.items()}
 
         # And let's decode our bodies to UTF-8, if possible
         req_body = "not logged"
         req_size = request_headers["content_length"] \
-                if "content_length" in request_headers else None
+                if "content_length" in request_headers else 0
 
         resp_body = "not logged"
         if log_bodies:
             req_body = request_meta.get('aalm_request_body', None)
             if req_body is not None:
                 try:
-                    req_body = original_req_body.decode('utf-8')
+                    req_body = req_body.decode('utf-8')
                 except UnicodeDecodeError:
                     req_body = "error decoding body to UTF-8"
 
@@ -75,10 +75,9 @@ class AccessLogBuilder():
 
         # When have everything, let's build and return our access log dict
         log_dict = {
-            'start_time': request_meta.get('aalm_timestamp_started', 0),
             'duration': duration,
             'x_client_address': request_meta.get('remote_addr', 'unknown'),
-            'errors': request_meta.get('aalm_exceptions'),
+            'errors': "\n".join(request_meta.get('aalm_exceptions')),
             'request': {
                 'method': request.method,
                 'http_version': request_meta.get('server_protocol', 'unknown'),
