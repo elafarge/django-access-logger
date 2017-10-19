@@ -43,7 +43,7 @@ import traceback
 from django.conf import settings
 
 # Project
-from access_logger import AccessLogBuilder
+from .access_logger import AccessLogBuilder
 
 # Necessary in order to maintain retro-compatibility with older versions of
 # Django...
