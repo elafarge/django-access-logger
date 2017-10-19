@@ -77,7 +77,7 @@ class AccessLogBuilder():
         log_dict = {
             'duration': duration,
             'x_client_address': request_meta.get('remote_addr', 'unknown'),
-            'errors': "\n".join(request_meta.get('aalm_exceptions')),
+            'errors': "\n".join(request_meta['aalm_exceptions']),
             'request': {
                 'method': request.method,
                 'http_version': request_meta.get('server_protocol', 'unknown'),
