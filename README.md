@@ -50,12 +50,12 @@ Installation
 #### 1. Enable the middleware
 As any other Django middleware, install it first:
 ```shell
-pip install django-access-logs             # or update your requirements.txt
+pip install django-access-logger           # or update your requirements.txt
 ```
 
 And simply add it to your list of enabled middleware in your Django settings:
 ```python
-MIDDLEWARE_CLASSES.insert(0, 'django_access_logs.AccessLoggingMiddleware')
+MIDDLEWARE_CLASSES.insert(0, 'django_access_logger.AccessLogsMiddleware')
 ```
 
 #### 2. Configure formatters & handlers
@@ -69,7 +69,7 @@ as well.
 Here's an example configuration using the `dictConfig` method
 ```python
 # in your django project settings file
-MIDDLEWARE_CLASSES.insert(0, 'django_access_logs.AccessLoggingMiddleware')
+MIDDLEWARE_CLASSES.insert(0, 'django_access_logger.AccessLogsMiddleware')
 
 LOGGING = {
     'version': 1,
