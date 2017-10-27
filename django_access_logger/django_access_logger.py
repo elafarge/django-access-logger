@@ -158,19 +158,26 @@ class AccessLogsMiddleware(MiddlewareMixin):
         if self.should_be_logged_as_debug(access_log):
             lvl = logging.DEBUG
 
+        access_log["level"] = logging.getLevelName(lvl).lower()
+
         self.logger.log(lvl, json.dumps(access_log))
 
         return response
 
     def should_be_logged_as_debug(self, log):
         """ Returns true if the request is in the list of requests we want to
-        skip """
+        log at the debug level """
         for entry in self.conf["DEBUG_REQUESTS"]:
             matches = True
+
+            # Let's see if all regexes in this group do match
             for (k, reg) in entry.items():
-                if not k in log or not reg.match(log[k]):
+                if k not in log or reg.match(log[k]) is None:
                     matches = False
                     break
+
             if matches:
                 return True
+
+        # No entry was matched
         return False

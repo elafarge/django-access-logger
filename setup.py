@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='django-access-logger',
-    version='0.3.2',
+    version='0.3.4',
     description='Access logging for Django, the right way',
     author="Étienne Lafarge",
     author_email="etienne.lafarge@gmail.com",
