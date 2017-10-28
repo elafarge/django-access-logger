@@ -34,7 +34,6 @@ from __future__ import unicode_literals
 # stl
 import re
 import sys
-import json
 import time
 import logging
 import traceback
@@ -68,7 +67,6 @@ DEFAULT_CONFIG = {
     "ADAPTERS": [],
     "BODY_LOG_LEVEL": logging.WARNING,
     "DEBUG_REQUESTS": [],
-    "FLATTEN": True,
     "MAX_BODY_SIZE": 5*1024,
 }
 
@@ -151,8 +149,7 @@ class AccessLogsMiddleware(MiddlewareMixin):
             adapter(request, access_log)
 
         # Flatten the log dict
-        if self.conf["FLATTEN"]:
-            access_log = self.log_builder.flatten_dict(access_log)
+        access_log = self.log_builder.flatten_dict(access_log)
 
         # Determine if the request should be logged under the DEBUG level
         if self.should_be_logged_as_debug(access_log):
@@ -160,7 +157,7 @@ class AccessLogsMiddleware(MiddlewareMixin):
 
         access_log["level"] = logging.getLevelName(lvl).lower()
 
-        self.logger.log(lvl, json.dumps(access_log))
+        self.logger.log(lvl, "request processed", extra=access_log)
 
         return response
 
