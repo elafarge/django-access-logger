@@ -73,11 +73,16 @@ class AccessLogBuilder():
             except UnicodeDecodeError:
                 resp_body = "Error decoding body to UTF-8"
 
+        # Let's "flatten" items from the aalm_exceptions list
+        # (traceback.format_exception returns a list, not a string)
+        errors = ["".join(item)
+                  for item in request_meta.get('aalm_exceptions', [])]
+
         # When have everything, let's build and return our access log dict
         log_dict = {
             'duration': duration,
             'x_client_address': request_meta.get('remote_addr', 'unknown'),
-            'errors': "\n".join(request_meta['aalm_exceptions']),
+            'errors': "\n".join(errors),
             'request': {
                 'method': request.method,
                 'http_version': request_meta.get('server_protocol', 'unknown'),
